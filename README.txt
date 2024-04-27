@@ -1,0 +1,1 @@
+This is a micro autograd engine that implements backpropagation over a dynamically built directed acyclic graph. It is based on the micrograd engine design by Andrej Karpathy (see https://github.com/karpathy/). It is meant for educational purposes only, although it can be used to, e.g., generate deep neural networks for binary classification.

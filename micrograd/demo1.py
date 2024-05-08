@@ -1,10 +1,14 @@
 '''
-Simple demonstration of the micrograd engine and network
+Simple 'for-fun' demonstration of the micrograd engine and network
     - micrograd/microEngine.py
     - micrograd/net.py
+    
+Set up for +1 / -1 moon classification using tanh() for neuron activation
+layer. However, relu() and sigmoid() are also available for neurons for more
+traditional binary classifier structures.
 '''
-import math
-import random
+#import math
+#import random
 import numpy as np
 import matplotlib.pyplot as plt
 import microEngine as me
@@ -46,7 +50,8 @@ def loss(X, y, model, batch_size=None):
     # Forward pass 
     scores = list(map(model, inputs))
     
-    # custom loss
+    # Custom loss:
+    # 0 if correct classification, 1 + ypred^2 incorrect classification
     losses = [(1 + score_k**2 if y_k * score_k.data <= 0 else 0) for y_k, score_k in zip(yb, scores)]
     
     # SVM max-margin loss
@@ -64,9 +69,6 @@ def loss(X, y, model, batch_size=None):
     total_loss = data_loss + reg_loss
     
     # Calculate accuracy as the percentage correctly classified
-    #accuracy = [(y_k > 0) == (score_k.data > 0) 
-    #            for y_k, score_k in zip(yb, scores)]
-    
     accuracy = [(y_k > 0) == (score_k.data > 0.0) 
                 for y_k, score_k in zip(yb, scores)]
     
@@ -77,14 +79,14 @@ def loss(X, y, model, batch_size=None):
 X, y = make_moons(n_samples=100, noise=0.1)
 y = y * 2 - 1  # Transform y to be -1 or 1 for tanh()
 
-# Training data visualization
+# Visualize the training data
 '''
 plt.figure(figsize=(5,5))
 plt.scatter(X[:,0], X[:,1], c=y, cmap='bwr')
 plt.title('Simple Two-Moons Dataset')
 plt.show()
 '''
-
+# Build network model
 model = net.Multilayer_Perceptron(2, [16,16,16,1], 'tanh') # 2 layer network
 print(model)
 N = 100
@@ -96,6 +98,10 @@ for k in range(0,N):
     if acc == 1:
         break
     
+    # Backward pass
+    model.zero_grad()
+    total_loss.backward()
+    
     # Update learning rate for fine-tuning result
     if acc >= 0.9:
         lRate = lRate0 / 2
@@ -103,23 +109,16 @@ for k in range(0,N):
         lRate = lRate0 / 5
     else:
         lRate = lRate0
-    
-    # Backward pass
-    model.zero_grad()
-    total_loss.backward()
+    #lRate = lRate0 - 0.9*lRate0*k/N
     
     # Update neurons (SGD)
-    #lRate = lRate0 - 0.9*lRate0*k/N
     for p in model.parameters():
         p.data += -lRate * p.grad
     
     if k % 1 == 0:
         print(f"step {k} loss {total_loss.data}, accuracy {acc*100}%")
-       
 
-
-
-# Visualize boundary
+# Visualize the boundary layer
 h = 0.25
 x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
 y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
